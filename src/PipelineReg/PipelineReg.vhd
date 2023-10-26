@@ -14,15 +14,17 @@ entity PipelineReg is
         clk : in std_logic;
         reset : in std_logic;
         o_Inst : out std_logic_vector(31 downto 0);
-        o_PC4 : out std_logic_vector(31 downto 0);
+        o_PC4_id : out std_logic_vector(31 downto 0);
         o_ex : out std_logic_vector(7 downto 0);
         o_shamt : out std_logic_vector(4 downto 0);
         o_rd : out std_logic_vector(4 downto 0);
         o_rsd_ex : out std_logic_vector(31 downto 0);
         o_rtd_ex : out std_logic_vector(31 downto 0);
+        o_rtd_mem : out std_logic_vector(31 downto 0);
         o_imm : out std_logic_vector(31 downto 0);
-        o_ALU : out std_logic_vector(31 downto 0);
-        o_Dmem : out std_logic_vector(31 downto 0));
+        o_ALU_mem : out std_logic_vector(31 downto 0);
+        o_Dmem : out std_logic_vector(31 downto 0);
+        o_mem : out std_logic);
 end PipelineReg;
 
 architecture structural of PipelineReg is
@@ -39,11 +41,17 @@ architecture structural of PipelineReg is
     signal instruction : std_logic_vector(31 downto 0);
     signal memforward : std_logic;
     signal wbforward1 : std_logic_vector(6 downto 0);
+    signal wbforward2 : std_logic_vector(6 downto 0);
     signal rdforward1 : std_logic_vector(4 downto 0);
+    signal rdforward2 : std_logic_vector(4 downto 0);
     signal rsdforward1 : std_logic_vector(31 downto 0);
-    signal rtdforward : std_logic_vector(31 downto 0);
+    signal rsdforward2 : std_logic_vector(31 downto 0);
+    signal rtdforward1 : std_logic_vector(31 downto 0);
+    signal rtdforward2 : std_logic_vector(31 downto 0);
     signal pc4forward1 : std_logic_vector(31 downto 0);
     signal pc4forward2 : std_logic_vector(31 downto 0);
+    signal pc4forward3 : std_logic_vector(31 downto 0);
+    signal aluforward : std_logic_vector(31 downto 0);
 begin
     
     --IF/ID
@@ -64,7 +72,7 @@ begin
             data => PC4,
             o_data => pc4forward1);
 
-    o_PC4 <= pc4forward1;
+    o_PC4_id <= pc4forward1;
 
     --ID/EX
     --EX controls
@@ -119,9 +127,9 @@ begin
             reset => reset,
             we => '1',
             data => rtd,
-            o_data => rtdforward);
+            o_data => rtdforward1);
     
-    o_rtd_ex <= rtdforward;
+    o_rtd_ex <= rtdforward1;
 
     --shamt
     ShiftAmt : RegNBit
@@ -141,10 +149,75 @@ begin
             o_data => o_imm);
     
     --PC + 4
-    PC4reg : RegNBit
+    PC4reg2 : RegNBit
     port MAP(clk => clk,
             reset => reset,
             we => '1',
             data => pc4forward1,
             o_data => pc4forward2);
+
+    --EX/MEM
+    --MEM Controls
+    MEMControl2 : RegNBit
+    generic MAP(N <= 1)
+    port MAP(clk => clk,
+            reset => reset,
+            we => '1',
+            data => memforward,
+            o_data => o_mem);
+
+    --WB Controls
+    WBControl2 : RegNBit
+    generic MAP(N <= 7)
+    port MAP(clk => clk,
+            reset => reset,
+            we => '1',
+            data => wbforward1,
+            o_data => wbforward2);
+
+    --rd
+    DestReg2 : RegNBit
+    generic MAP(N <= 5)
+    port MAP(clk => clk,
+            reset => reset,
+            we => '1',
+            data => rdforward1,
+            o_data => rdforward2);
+    
+    --rs data
+    rsData2 : RegNBit
+    port MAP(clk => clk,
+            reset => reset,
+            we => '1',
+            data => rsdforward1,
+            o_data => rsdforward2);
+        
+    --rt data
+    rtData2 : RegNBit
+    port MAP(clk => clk,
+            reset => reset,
+            we => '1',
+            data => rtdforward1,
+            o_data => rtdforward2);
+
+    o_rtd_mem <= rtdforward2;
+
+    --ALU data
+    ALUdata : RegNBit
+    port MAP(clk => clk,
+            reset => reset,
+            we => '1',
+            data => ALU,
+            o_data => aluforward);
+
+    o_ALU_mem <= aluforward;
+
+    --PC + 4
+    PC4reg3 : RegNBit
+    port MAP(clk => clk,
+            reset => reset,
+            we => '1',
+            data => pc4forward2,
+            o_data => pc4forward3);
+    
 end structural;
