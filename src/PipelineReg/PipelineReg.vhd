@@ -42,6 +42,8 @@ architecture structural of PipelineReg is
     signal rdforward1 : std_logic_vector(4 downto 0);
     signal rsdforward1 : std_logic_vector(31 downto 0);
     signal rtdforward : std_logic_vector(31 downto 0);
+    signal pc4forward1 : std_logic_vector(31 downto 0);
+    signal pc4forward2 : std_logic_vector(31 downto 0);
 begin
     
     --IF/ID
@@ -53,6 +55,16 @@ begin
             o_data => instruction);
     
     o_Inst <= instruction;
+
+    --PC + 4
+    PC4reg : RegNBit
+    port MAP(clk => clk,
+            reset => reset,
+            we => '1',
+            data => PC4,
+            o_data => pc4forward1);
+
+    o_PC4 <= pc4forward1;
 
     --ID/EX
     --EX controls
@@ -128,4 +140,11 @@ begin
             data => imm,
             o_data => o_imm);
     
+    --PC + 4
+    PC4reg : RegNBit
+    port MAP(clk => clk,
+            reset => reset,
+            we => '1',
+            data => pc4forward1,
+            o_data => pc4forward2);
 end structural;
