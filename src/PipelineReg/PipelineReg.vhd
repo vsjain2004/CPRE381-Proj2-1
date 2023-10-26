@@ -29,7 +29,7 @@ entity PipelineReg is
         o_Dmem : out std_logic_vector(31 downto 0);
         o_mem : out std_logic;
         o_wb : out std_logic_vector(7 downto 0);
-        o_halt);
+        o_halt : out std_logic);
 end PipelineReg;
 
 architecture structural of PipelineReg is
