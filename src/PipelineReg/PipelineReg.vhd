@@ -14,7 +14,6 @@ entity PipelineReg is
         clk : in std_logic;
         reset : in std_logic;
         o_Inst : out std_logic_vector(31 downto 0);
-        o_PC4_id : out std_logic_vector(31 downto 0);
         o_PC4_wb : out std_logic_vector(31 downto 0);
         o_ex : out std_logic_vector(7 downto 0);
         o_shamt : out std_logic_vector(4 downto 0);
@@ -76,8 +75,6 @@ begin
             we => '1',
             data => PC4,
             o_data => pc4forward1);
-
-    o_PC4_id <= pc4forward1;
 
     --ID/EX
     --EX controls

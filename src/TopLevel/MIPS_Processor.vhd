@@ -144,6 +144,47 @@ architecture structure of MIPS_Processor is
         result : out std_logic_vector(31 downto 0));
   end component;
 
+  component PipelineReg is
+    port(Inst : in std_logic_vector(31 downto 0);
+      PC4 : in std_logic_vector(31 downto 0);
+      Control : in std_logic_vector(16 downto 0);
+      rd : in std_logic_vector(4 downto 0);
+      rsd : in std_logic_vector(31 downto 0);
+      rtd : in std_logic_vector(31 downto 0);
+      imm : in std_logic_vector(31 downto 0);
+      ALU : in std_logic_vector(31 downto 0);
+      Dmem : in std_logic_vector(31 downto 0);
+      clk : in std_logic;
+      reset : in std_logic;
+      o_Inst : out std_logic_vector(31 downto 0);
+      o_PC4_wb : out std_logic_vector(31 downto 0);
+      o_ex : out std_logic_vector(7 downto 0);
+      o_shamt : out std_logic_vector(4 downto 0);
+      o_rd : out std_logic_vector(4 downto 0);
+      o_rsd_ex : out std_logic_vector(31 downto 0);
+      o_rsd_wb : out std_logic_vector(31 downto 0);
+      o_rtd_ex : out std_logic_vector(31 downto 0);
+      o_rtd_mem : out std_logic_vector(31 downto 0);
+      o_imm : out std_logic_vector(31 downto 0);
+      o_ALU_mem : out std_logic_vector(31 downto 0);
+      o_ALU_wb : out std_logic_vector(31 downto 0);
+      o_Dmem : out std_logic_vector(31 downto 0);
+      o_mem : out std_logic;
+      o_wb : out std_logic_vector(7 downto 0);
+      o_halt : out std_logic);
+  end component;
+
+  component CLA_32
+    port(X : in std_logic_vector(31 downto 0);
+        Y : in std_logic_vector(31 downto 0);
+        AddSub : in std_logic;
+        S : out std_logic_vector(31 downto 0);
+        zero : out std_logic;
+        negative : out std_logic;
+        overflow : out std_logic;
+        carry : out std_logic);
+  end component;
+
   signal o_rd : std_logic_vector(4 downto 0);
   signal movz : std_logic;
   signal movn : std_logic;
@@ -174,12 +215,18 @@ architecture structure of MIPS_Processor is
   signal x : std_logic_vector(31 downto 0);
   signal y : std_logic_vector(31 downto 0);
   signal shamt : std_logic_vector(4 downto 0);
-  signal z : std_logic;
+  signal z_id : std_logic;
+  signal z_wb : std_logic;
   signal neg : std_logic;
   signal o : std_logic;
   signal pc_1 : std_logic;
   signal pc_0 : std_logic;
+  signal pc_en : std_logic;
+  signal dmem_we : std_logic;
+  signal halt : std_logic;
   signal reg_sel : std_logic_vector(1 downto 0);
+  signal inst : std_logic_vector(31 downto 0);
+  signal rd : std_logic_vector(4 downto 0);
 
 begin
 
@@ -211,10 +258,39 @@ begin
   -- TODO: Ensure that s_Ovfl is connected to the overflow output of your ALU
 
   -- TODO: Implement the rest of your processor below this comment! 
-  Control0 : Control
-  port MAP(opcode => s_Inst(31 downto 26),
-          funct => s_Inst(5 downto 0),
-          i_rd => s_Inst(15 downto 11),
+  pipeReg : PipelineReg
+  port MAP(Inst => s_Inst,
+          PC4 => pc4o,
+          Control : in std_logic_vector(16 downto 0);
+          rd => rd,
+          rsd => o_rs,
+          rtd => o_rt,
+          imm => ext_res,
+          ALU : in std_logic_vector(31 downto 0);
+          Dmem => s_DMemOut,
+          clk => iCLK,
+          reset => iRST,
+          o_Inst => inst,
+          o_PC4_wb : out std_logic_vector(31 downto 0);
+          o_ex : out std_logic_vector(7 downto 0);
+          o_shamt : out std_logic_vector(4 downto 0);
+          o_rd : out std_logic_vector(4 downto 0);
+          o_rsd_ex : out std_logic_vector(31 downto 0);
+          o_rsd_wb : out std_logic_vector(31 downto 0);
+          o_rtd_ex : out std_logic_vector(31 downto 0);
+          o_rtd_mem => s_DMemData,
+          o_imm : out std_logic_vector(31 downto 0);
+          o_ALU_mem => s_DMemAddr,
+          o_ALU_wb : out std_logic_vector(31 downto 0);
+          o_Dmem : out std_logic_vector(31 downto 0);
+          o_mem : out std_logic;
+          o_wb : out std_logic_vector(7 downto 0);
+          o_halt => pc_en);
+  
+  Control0 : Control --Done
+  port MAP(opcode => inst(31 downto 26),
+          funct => inst(5 downto 0),
+          i_rd => inst(15 downto 11),
           o_rd => o_rd,
           movz => movz,
           movn => movn,
@@ -231,7 +307,7 @@ begin
           alu_sel_2 => alu_sel_2,
           alu_sel_1 => alu_sel_1,
           alu_sel_0 => alu_sel_0,
-          dmem_we => s_DMemWr,
+          dmem_we => dmem_we,
           reg_we => reg_we,
           reg_sel_1 => reg_sel_1,
           reg_sel_0 => reg_sel_0,
@@ -239,24 +315,37 @@ begin
           pc_sel_1 => pc_sel_1,
           pc_sel_0 => pc_sel_0,
           det_o => det_o,
-          halt => s_Halt);
+          halt => halt);
 
-  Extender: extend1632
-  port MAP(data => s_Inst(15 downto 0),
+  Extender: extend1632 --Done
+  port MAP(data => inst(15 downto 0),
           exttype => imm_ext,
           result => ext_res);
+
+  rd <= o_rd when (rd_sel = '0') else --Done
+                  inst(20 downto 16) when (rd_sel = '1') else
+                  "00000";
   
-  reg : RegFile
+  s_RegWr <= reg_we or (movz and z) or (movn and (not z));
+
+  reg_sel <= reg_sel_1 & reg_sel_0;
+
+  with reg_sel select
+    s_RegWrData <= s_DMemAddr when "00",
+                    s_DMemOut when "01",
+                    pc4o when "10",
+                    o_rs when "11",
+                    x"00000000" when others;
+
+  reg : RegFile --Done
   port MAP(data => s_RegWrData,
-          i_rs => s_Inst(25 downto 21),
-          i_rt => s_Inst(20 downto 16),
+          i_rs => inst(25 downto 21),
+          i_rt => inst(20 downto 16),
           i_rd => s_RegWrAddr,
           reset => iRST,
           clk => iCLK,
           o_rs => o_rs,
           o_rt => o_rt);
-
-  s_DMemData <= o_rt;
 
   with rs_sel select
     x <= o_rs when '0',
@@ -283,42 +372,38 @@ begin
           alu_sel_1 => alu_sel_1,
           alu_sel_2 => alu_sel_2,
           result => s_DMemAddr,
-          zero => z,
-          negative => neg,
-          overflow => o);
+          zero => open,
+          negative => open,
+          overflow => open);
   
   oALUOut <= s_DMemAddr;
   s_Ovfl <= o and det_o;
-  pc_1 <= pc_sel_1 or (beq and z) or (bne and (not z)) or (blez and (z or (neg xor o))) or (bgtz and ((not z) and (not (neg xor o))));
-  pc_0 <= pc_sel_0 or (beq and z) or (bne and (not z)) or (blez and (z or (neg xor o))) or (bgtz and ((not z) and (not (neg xor o))));
+  
+  --Done
+  Comp : CLA_32
+  port MAP(X => o_rs,
+          Y = o_rt,
+          AddSub : '1',
+          S => open,
+          zero => z_id,
+          negative => neg,
+          overflow => o,
+          carry => open);
+
+  pc_1 <= pc_sel_1 or (beq and z_id) or (bne and (not z_id)) or (blez and (z_id or (neg xor o))) or (bgtz and ((not z_id) and (not (neg xor o))));
+  pc_0 <= pc_sel_0 or (beq and z_id) or (bne and (not z_id)) or (blez and (z_id or (neg xor o))) or (bgtz and ((not z_id) and (not (neg xor o))));
 
   progc : PC
   port MAP(linkr => o_rs,
-          JAddr => s_Inst(25 downto 0),
+          JAddr => inst(25 downto 0),
           BAddr => ext_res,
           pc_sel_1 => pc_1,
           pc_sel_0 => pc_0,
           clk => iCLK,
           reset => iRST,
-          halt => s_Halt,
+          halt => pc_en,
           o_PC => s_NextInstAddr,
           o_PC4 => pc4o);
-  
-  s_RegWr <= reg_we or (movz and z) or (movn and (not z));
-
-  s_RegWrAddr <= o_rd when (rd_sel = '0' and s_RegWr = '1') else
-                 s_Inst(20 downto 16) when (rd_sel = '1' and s_RegWr = '1') else
-                 "00000";
-  
-  reg_sel <= reg_sel_1 & reg_sel_0;
-
-  with reg_sel select
-    s_RegWrData <= s_DMemAddr when "00",
-                   s_DMemOut when "01",
-                   pc4o when "10",
-                   o_rs when "11",
-                   x"00000000" when others;
-                   
-
+                  
 end structure;
 
