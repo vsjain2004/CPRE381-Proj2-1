@@ -44,6 +44,14 @@ architecture structural of PipelineReg is
             o_data : out std_logic_vector(N-1 downto 0));
     end component;
 
+    component dffg is
+        port(i_CLK        : in std_logic;
+             i_RST        : in std_logic;
+             i_WE         : in std_logic;
+             i_D          : in std_logic;
+             o_Q          : out std_logic);
+    end component;
+
     signal instruction : std_logic_vector(31 downto 0);
     signal memforward : std_logic;
     signal wbforward1 : std_logic_vector(6 downto 0);
@@ -82,7 +90,7 @@ begin
     --ID/EX
     --EX controls
     EXControl : RegNBit --sel_y, rs_sel, ivu_sel, astype, shdir, alu_sel_2,1,0
-    generic MAP(N <= 8)
+    generic MAP(N => 8)
     port MAP(clk => clk,
             reset => reset,
             we => '1',
@@ -90,17 +98,16 @@ begin
             o_data => o_ex);
 
     --MEM controls
-    MEMControl : RegNBit --dmem_we
-    generic MAP(N <= 1)
-    port MAP(clk => clk,
-            reset => reset,
-            we => '1',
-            data => Control(7),
-            o_data => memforward);
+    MEMControl : dffg --dmem_we
+    port MAP(i_CLK => clk,
+            i_RST => reset,
+            i_WE => '1',
+            i_D => Control(7),
+            o_Q => memforward);
 
     --WB controls
     WBControl : RegNBit --movz, movn, reg_we, reg_sel_1,0, det_o, halt
-    generic MAP(N <= 7)
+    generic MAP(N => 7)
     port MAP(clk => clk,
             reset => reset,
             we => '1',
@@ -109,7 +116,7 @@ begin
     
     --rd
     DestReg : RegNBit
-    generic MAP(N <= 5)
+    generic MAP(N => 5)
     port MAP(clk => clk,
             reset => reset,
             we => '1',
@@ -138,7 +145,7 @@ begin
 
     --shamt
     ShiftAmt : RegNBit
-    generic MAP(N <= 5)
+    generic MAP(N => 5)
     port MAP(clk => clk,
             reset => reset,
             we => '1',
@@ -163,17 +170,16 @@ begin
 
     --EX/MEM
     --MEM Controls
-    MEMControl2 : RegNBit
-    generic MAP(N <= 1)
-    port MAP(clk => clk,
-            reset => reset,
-            we => '1',
-            data => memforward,
-            o_data => o_mem);
+    MEMControl2 : dffg
+    port MAP(i_CLK => clk,
+            i_RST => reset,
+            i_WE => '1',
+            i_D => memforward,
+            o_Q => o_mem);
 
     --WB Controls
     WBControl2 : RegNBit
-    generic MAP(N <= 7)
+    generic MAP(N => 7)
     port MAP(clk => clk,
             reset => reset,
             we => '1',
@@ -182,7 +188,7 @@ begin
 
     --rd
     DestReg2 : RegNBit
-    generic MAP(N <= 5)
+    generic MAP(N => 5)
     port MAP(clk => clk,
             reset => reset,
             we => '1',
@@ -216,13 +222,12 @@ begin
     o_ALU_mem <= aluforward;
 
     --Overflow
-    Ovfl : RegNBit
-    generic MAP(N <= 1)
-    port MAP(clk => clk,
-            reset => reset,
-            we => '1',
-            data => Ov,
-            o_data => ovforward);
+    Ovfl : dffg
+    port MAP(i_CLK => clk,
+            i_RST => reset,
+            i_WE => '1',
+            i_D => Ov,
+            o_Q => ovforward);
 
     --PC + 4
     PC4reg3 : RegNBit
@@ -235,7 +240,7 @@ begin
     --MEM/WB
     --WB Controls
     WBControl3 : RegNBit
-    generic MAP(N <= 7)
+    generic MAP(N => 7)
     port MAP(clk => clk,
             reset => reset,
             we => '1',
@@ -246,7 +251,7 @@ begin
 
     --rd
     DestReg3 : RegNBit
-    generic MAP(N <= 5)
+    generic MAP(N => 5)
     port MAP(clk => clk,
             reset => reset,
             we => '1',
@@ -270,13 +275,12 @@ begin
             o_data => o_ALU_wb);
 
     --Overflow
-    Ovfl : RegNBit
-    generic MAP(N <= 1)
-    port MAP(clk => clk,
-            reset => reset,
-            we => '1',
-            data => ovforward,
-            o_data => o_Ov);
+    Ovfl2 : dffg --dmem_we
+    port MAP(i_CLK => clk,
+            i_RST => reset,
+            i_WE => '1',
+            i_D => ovforward,
+            o_Q => o_Ov);
 
     --DMEM data
     DMEMdata : RegNBit

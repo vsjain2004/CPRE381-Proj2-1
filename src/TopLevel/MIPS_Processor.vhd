@@ -243,6 +243,7 @@ architecture structure of MIPS_Processor is
   signal pc4_wb : std_logic_vector(31 downto 0);
   signal dmem_wb : std_logic_vector(31 downto 0);
   signal control_in : std_logic_vector(15 downto 0);
+  signal z : std_logic;
 begin
 
   -- TODO: This is required to be your final input to your instruction memory. This provides a feasible method to externally load the memory module which means that the synthesis tool must assume it knows nothing about the values stored in the instruction memory. If this is not included, much, if not all of the design is optimized out because the synthesis tool will believe the memory to be all zeros.
@@ -281,13 +282,13 @@ begin
           rsd => o_rs,
           rtd => o_rt,
           imm => ext_res,
-          ALU => o_alu;
+          ALU => o_alu,
           Ov => ov_in,
           Dmem => s_DMemOut,
           clk => iCLK,
           reset => iRST,
           o_Inst => inst,
-          o_PC4_wb => pc4_wb;
+          o_PC4_wb => pc4_wb,
           o_ex => o_ex,
           o_shamt => o_shamt,
           o_rd => s_RegWrAddr,
@@ -403,8 +404,8 @@ begin
 
   Comp : CLA_32
   port MAP(X => o_rs,
-          Y = o_rt,
-          AddSub : '1',
+          Y => o_rt,
+          AddSub => '1',
           S => open,
           zero => z_id,
           negative => neg,
