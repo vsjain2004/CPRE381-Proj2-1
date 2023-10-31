@@ -147,12 +147,13 @@ architecture structure of MIPS_Processor is
   component PipelineReg is
     port(Inst : in std_logic_vector(31 downto 0);
       PC4 : in std_logic_vector(31 downto 0);
-      Control : in std_logic_vector(16 downto 0);
+      Control : in std_logic_vector(15 downto 0);
       rd : in std_logic_vector(4 downto 0);
       rsd : in std_logic_vector(31 downto 0);
       rtd : in std_logic_vector(31 downto 0);
       imm : in std_logic_vector(31 downto 0);
       ALU : in std_logic_vector(31 downto 0);
+      Ov : in std_logic;
       Dmem : in std_logic_vector(31 downto 0);
       clk : in std_logic;
       reset : in std_logic;
@@ -168,9 +169,10 @@ architecture structure of MIPS_Processor is
       o_imm : out std_logic_vector(31 downto 0);
       o_ALU_mem : out std_logic_vector(31 downto 0);
       o_ALU_wb : out std_logic_vector(31 downto 0);
+      o_Ov : out std_logic;
       o_Dmem : out std_logic_vector(31 downto 0);
       o_mem : out std_logic;
-      o_wb : out std_logic_vector(7 downto 0);
+      o_wb : out std_logic_vector(6 downto 0);
       o_halt : out std_logic);
   end component;
 
@@ -227,7 +229,20 @@ architecture structure of MIPS_Processor is
   signal reg_sel : std_logic_vector(1 downto 0);
   signal inst : std_logic_vector(31 downto 0);
   signal rd : std_logic_vector(4 downto 0);
-
+  signal ov_in : std_logic;
+  signal ov_out : std_logic;
+  signal o_ex : std_logic_vector(7 downto 0);
+  signal o_alu : std_logic_vector(31 downto 0);
+  signal o_shamt : std_logic_vector(4 downto 0);
+  signal o_rsd_ex : std_logic_vector(31 downto 0);
+  signal o_rsd_wb : std_logic_vector(31 downto 0);
+  signal o_rtd_ex : std_logic_vector(31 downto 0);
+  signal o_imm : std_logic_vector(31 downto 0);
+  signal o_wb : std_logic_vector(6 downto 0);
+  signal alu_wb : std_logic_vector(31 downto 0);
+  signal pc4_wb : std_logic_vector(31 downto 0);
+  signal dmem_wb : std_logic_vector(31 downto 0);
+  signal control_in : std_logic_vector(15 downto 0);
 begin
 
   -- TODO: This is required to be your final input to your instruction memory. This provides a feasible method to externally load the memory module which means that the synthesis tool must assume it knows nothing about the values stored in the instruction memory. If this is not included, much, if not all of the design is optimized out because the synthesis tool will believe the memory to be all zeros.
@@ -261,33 +276,38 @@ begin
   pipeReg : PipelineReg
   port MAP(Inst => s_Inst,
           PC4 => pc4o,
-          Control : in std_logic_vector(16 downto 0);
+          Control => control_in, --sel_y, rs_sel, ivu_sel, astype, shdir, alu_sel_2,1,0 | dmem_we | movz, movn, reg_we, reg_sel_1,0, det_o, halt
           rd => rd,
           rsd => o_rs,
           rtd => o_rt,
           imm => ext_res,
-          ALU : in std_logic_vector(31 downto 0);
+          ALU => o_alu;
+          Ov => ov_in,
           Dmem => s_DMemOut,
           clk => iCLK,
           reset => iRST,
           o_Inst => inst,
-          o_PC4_wb : out std_logic_vector(31 downto 0);
-          o_ex : out std_logic_vector(7 downto 0);
-          o_shamt : out std_logic_vector(4 downto 0);
-          o_rd : out std_logic_vector(4 downto 0);
-          o_rsd_ex : out std_logic_vector(31 downto 0);
-          o_rsd_wb : out std_logic_vector(31 downto 0);
-          o_rtd_ex : out std_logic_vector(31 downto 0);
+          o_PC4_wb => pc4_wb;
+          o_ex => o_ex,
+          o_shamt => o_shamt,
+          o_rd => s_RegWrAddr,
+          o_rsd_ex => o_rsd_ex,
+          o_rsd_wb => o_rsd_wb,
+          o_rtd_ex => o_rtd_ex,
           o_rtd_mem => s_DMemData,
-          o_imm : out std_logic_vector(31 downto 0);
+          o_imm => o_imm,
           o_ALU_mem => s_DMemAddr,
-          o_ALU_wb : out std_logic_vector(31 downto 0);
-          o_Dmem : out std_logic_vector(31 downto 0);
-          o_mem : out std_logic;
-          o_wb : out std_logic_vector(7 downto 0);
+          o_ALU_wb => alu_wb,
+          o_Ov => ov_out,
+          o_Dmem => dmem_wb,
+          o_mem => s_DMemWr,
+          o_wb => o_wb,
           o_halt => pc_en);
+
+  s_Halt <= o_wb(0);
+  oALUOut <= alu_wb;
   
-  Control0 : Control --Done
+  Control0 : Control
   port MAP(opcode => inst(31 downto 26),
           funct => inst(5 downto 0),
           i_rd => inst(15 downto 11),
@@ -317,27 +337,30 @@ begin
           det_o => det_o,
           halt => halt);
 
-  Extender: extend1632 --Done
+  control_in <= sel_y & rs_sel & ivu_sel & astype & shdir & alu_sel_2 & alu_sel_1 & alu_sel_0 & dmem_we & movz & movn & reg_we & reg_sel_1 & reg_sel_0 & det_o & halt;
+
+  Extender: extend1632
   port MAP(data => inst(15 downto 0),
           exttype => imm_ext,
           result => ext_res);
 
-  rd <= o_rd when (rd_sel = '0') else --Done
+  rd <= o_rd when (rd_sel = '0') else
                   inst(20 downto 16) when (rd_sel = '1') else
                   "00000";
   
-  s_RegWr <= reg_we or (movz and z) or (movn and (not z));
+  z <= not(alu_wb(31) or alu_wb(30) or alu_wb(29) or alu_wb(28) or alu_wb(27) or alu_wb(26) or alu_wb(25) or alu_wb(24) or alu_wb(23) or alu_wb(22) or alu_wb(21) or alu_wb(20) or alu_wb(19) or alu_wb(18) or alu_wb(17) or alu_wb(16) or alu_wb(15) or alu_wb(14) or alu_wb(13) or alu_wb(12) or alu_wb(11) or alu_wb(10) or alu_wb(9) or alu_wb(8) or alu_wb(7) or alu_wb(6) or alu_wb(5) or alu_wb(4) or alu_wb(3) or alu_wb(2) or alu_wb(1) or alu_wb(0));
+  s_RegWr <= o_wb(4) or (o_wb(6) and z) or (o_wb(5) and (not z));
 
-  reg_sel <= reg_sel_1 & reg_sel_0;
+  reg_sel <= o_wb(3) & o_wb(2);
 
   with reg_sel select
-    s_RegWrData <= s_DMemAddr when "00",
-                    s_DMemOut when "01",
-                    pc4o when "10",
-                    o_rs when "11",
-                    x"00000000" when others;
+    s_RegWrData <= alu_wb when "00",
+                   dmem_wb when "01",
+                   pc4_wb when "10",
+                   o_rsd_wb when "11",
+                   x"00000000" when others;
 
-  reg : RegFile --Done
+  reg : RegFile
   port MAP(data => s_RegWrData,
           i_rs => inst(25 downto 21),
           i_rt => inst(20 downto 16),
@@ -347,39 +370,37 @@ begin
           o_rs => o_rs,
           o_rt => o_rt);
 
-  with rs_sel select
-    x <= o_rs when '0',
+  with o_ex(6) select
+    x <= o_rsd_ex when '0',
          x"00000000" when others;
 
-  with sel_y select
-    y <= o_rt when '0',
-         ext_res when '1',
+  with o_ex(7) select
+    y <= o_rtd_ex when '0',
+         o_imm when '1',
          x"00000000" when others;
 
-  with ivu_sel select
-    shamt <= s_Inst(10 downto 6) when '0',
-             o_rs(4 downto 0) when '1',
+  with o_ex(5) select
+    shamt <= o_shamt when '0',
+             o_rsd_ex(4 downto 0) when '1',
              "00000" when others;
 
   ALU0 : ALU
   port MAP(X => x,
           Y => y,
-          astype => astype,
+          astype => o_ex(4),
           shamt => shamt,
-          shdir => shdir,
-          ivu_sel => ivu_sel,
-          alu_sel_0 => alu_sel_0,
-          alu_sel_1 => alu_sel_1,
-          alu_sel_2 => alu_sel_2,
-          result => s_DMemAddr,
+          shdir => o_ex(3),
+          ivu_sel => o_ex(5),
+          alu_sel_0 => o_ex(0),
+          alu_sel_1 => o_ex(1),
+          alu_sel_2 => o_ex(2),
+          result => o_alu,
           zero => open,
           negative => open,
-          overflow => open);
-  
-  oALUOut <= s_DMemAddr;
-  s_Ovfl <= o and det_o;
-  
-  --Done
+          overflow => ov_in);
+
+  s_Ovfl <= ov_out and o_wb(1);
+
   Comp : CLA_32
   port MAP(X => o_rs,
           Y = o_rt,

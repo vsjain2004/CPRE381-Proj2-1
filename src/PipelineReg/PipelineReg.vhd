@@ -4,12 +4,13 @@ use IEEE.std_logic_1164.all;
 entity PipelineReg is
     port(Inst : in std_logic_vector(31 downto 0);
         PC4 : in std_logic_vector(31 downto 0);
-        Control : in std_logic_vector(16 downto 0);
+        Control : in std_logic_vector(15 downto 0);
         rd : in std_logic_vector(4 downto 0);
         rsd : in std_logic_vector(31 downto 0);
         rtd : in std_logic_vector(31 downto 0);
         imm : in std_logic_vector(31 downto 0);
         ALU : in std_logic_vector(31 downto 0);
+        Ov : in std_logic;
         Dmem : in std_logic_vector(31 downto 0);
         clk : in std_logic;
         reset : in std_logic;
@@ -25,9 +26,10 @@ entity PipelineReg is
         o_imm : out std_logic_vector(31 downto 0);
         o_ALU_mem : out std_logic_vector(31 downto 0);
         o_ALU_wb : out std_logic_vector(31 downto 0);
+        o_Ov : out std_logic;
         o_Dmem : out std_logic_vector(31 downto 0);
         o_mem : out std_logic;
-        o_wb : out std_logic_vector(7 downto 0);
+        o_wb : out std_logic_vector(6 downto 0);
         o_halt : out std_logic);
 end PipelineReg;
 
@@ -44,9 +46,9 @@ architecture structural of PipelineReg is
 
     signal instruction : std_logic_vector(31 downto 0);
     signal memforward : std_logic;
-    signal wbforward1 : std_logic_vector(7 downto 0);
-    signal wbforward2 : std_logic_vector(7 downto 0);
-    signal wb3 : std_logic_vector(7 downto 0);
+    signal wbforward1 : std_logic_vector(6 downto 0);
+    signal wbforward2 : std_logic_vector(6 downto 0);
+    signal wb3 : std_logic_vector(6 downto 0);
     signal rdforward1 : std_logic_vector(4 downto 0);
     signal rdforward2 : std_logic_vector(4 downto 0);
     signal rsdforward1 : std_logic_vector(31 downto 0);
@@ -56,6 +58,7 @@ architecture structural of PipelineReg is
     signal pc4forward2 : std_logic_vector(31 downto 0);
     signal pc4forward3 : std_logic_vector(31 downto 0);
     signal aluforward : std_logic_vector(31 downto 0);
+    signal ovforward : std_logic;
 begin
     
     --IF/ID
@@ -83,7 +86,7 @@ begin
     port MAP(clk => clk,
             reset => reset,
             we => '1',
-            data => Control(16 downto 9),
+            data => Control(15 downto 8),
             o_data => o_ex);
 
     --MEM controls
@@ -92,16 +95,16 @@ begin
     port MAP(clk => clk,
             reset => reset,
             we => '1',
-            data => Control(8),
+            data => Control(7),
             o_data => memforward);
 
     --WB controls
-    WBControl : RegNBit --movz, movn, reg_we, reg_sel_1,0, rd_sel, det_o, halt
-    generic MAP(N <= 8)
+    WBControl : RegNBit --movz, movn, reg_we, reg_sel_1,0, det_o, halt
+    generic MAP(N <= 7)
     port MAP(clk => clk,
             reset => reset,
             we => '1',
-            data => Control(7 downto 0),
+            data => Control(6 downto 0),
             o_data => wbforward1);
     
     --rd
@@ -212,6 +215,15 @@ begin
 
     o_ALU_mem <= aluforward;
 
+    --Overflow
+    Ovfl : RegNBit
+    generic MAP(N <= 1)
+    port MAP(clk => clk,
+            reset => reset,
+            we => '1',
+            data => Ov,
+            o_data => ovforward);
+
     --PC + 4
     PC4reg3 : RegNBit
     port MAP(clk => clk,
@@ -256,6 +268,15 @@ begin
             we => '1',
             data => aluforward,
             o_data => o_ALU_wb);
+
+    --Overflow
+    Ovfl : RegNBit
+    generic MAP(N <= 1)
+    port MAP(clk => clk,
+            reset => reset,
+            we => '1',
+            data => ovforward,
+            o_data => o_Ov);
 
     --DMEM data
     DMEMdata : RegNBit
