@@ -243,7 +243,6 @@ architecture structure of MIPS_Processor is
   signal pc4_wb : std_logic_vector(31 downto 0);
   signal dmem_wb : std_logic_vector(31 downto 0);
   signal control_in : std_logic_vector(15 downto 0);
-  signal z : std_logic;
 begin
 
   -- TODO: This is required to be your final input to your instruction memory. This provides a feasible method to externally load the memory module which means that the synthesis tool must assume it knows nothing about the values stored in the instruction memory. If this is not included, much, if not all of the design is optimized out because the synthesis tool will believe the memory to be all zeros.
@@ -349,8 +348,8 @@ begin
                   inst(20 downto 16) when (rd_sel = '1') else
                   "00000";
   
-  z <= not(alu_wb(31) or alu_wb(30) or alu_wb(29) or alu_wb(28) or alu_wb(27) or alu_wb(26) or alu_wb(25) or alu_wb(24) or alu_wb(23) or alu_wb(22) or alu_wb(21) or alu_wb(20) or alu_wb(19) or alu_wb(18) or alu_wb(17) or alu_wb(16) or alu_wb(15) or alu_wb(14) or alu_wb(13) or alu_wb(12) or alu_wb(11) or alu_wb(10) or alu_wb(9) or alu_wb(8) or alu_wb(7) or alu_wb(6) or alu_wb(5) or alu_wb(4) or alu_wb(3) or alu_wb(2) or alu_wb(1) or alu_wb(0));
-  s_RegWr <= o_wb(4) or (o_wb(6) and z) or (o_wb(5) and (not z));
+  z_wb <= not(alu_wb(31) or alu_wb(30) or alu_wb(29) or alu_wb(28) or alu_wb(27) or alu_wb(26) or alu_wb(25) or alu_wb(24) or alu_wb(23) or alu_wb(22) or alu_wb(21) or alu_wb(20) or alu_wb(19) or alu_wb(18) or alu_wb(17) or alu_wb(16) or alu_wb(15) or alu_wb(14) or alu_wb(13) or alu_wb(12) or alu_wb(11) or alu_wb(10) or alu_wb(9) or alu_wb(8) or alu_wb(7) or alu_wb(6) or alu_wb(5) or alu_wb(4) or alu_wb(3) or alu_wb(2) or alu_wb(1) or alu_wb(0));
+  s_RegWr <= o_wb(4) or (o_wb(6) and z_wb) or (o_wb(5) and (not z_wb));
 
   reg_sel <= o_wb(3) & o_wb(2);
 
