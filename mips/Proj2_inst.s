@@ -18,6 +18,44 @@ sltiu $s0, $t2, -6
 sw $t8, 4($t3)
 sllv $s1, $t0, $t7
 srlv $s2, $t0, $t7
-srav $s3, $t0, $t7
+srav $s3, $t1, $t7
+add $s4, $t9, $s0
+addu $s5, $t8, $t7
+sub $s6, $t9, $s0
+subu $s7, $t1, $t1
+jal link1
+nop
+nop
+nop
+jr $31
+nop
+link1:
+nop
+nop
+nop
+jalr $31
+nop
+
+andi $t0, $t2, 4
+and $t1, $t2, $t2
+or $t2, $t2, $t4
+movn $t7, $t0, $0
+movz $t7, $t0, $0
+nop
+xor $t3, $t0, $t2
+nor $t4, $t2, $t2
+
+beq $0, $0, branch1
+branch2: nop
+blez $t6, branch3
+branch4: nop
+j Exit
+nop
+
+branch1: nop
+bne $0, $t0, branch2
+branch3: nop
+bgtz $t1, branch4
+Exit: nop
 
 halt

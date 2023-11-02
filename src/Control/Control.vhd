@@ -70,7 +70,7 @@ begin
     alu_sel_1 <= (op_dec(0) and (func_dec(36) or func_dec(39) or func_dec(42) or func_dec(43))) or op_dec(10) or op_dec(11) or op_dec(12) or op_dec(15);
     alu_sel_0 <= (op_dec(0) and (func_dec(0) or func_dec(2) or func_dec(3) or func_dec(4) or func_dec(6) or func_dec(7) or func_dec(38) or func_dec(39) or func_dec(42) or func_dec(43))) or op_dec(10) or op_dec(11) or op_dec(14);
     dmem_we <= op_dec(43);
-    reg_we <= not ((op_dec(0) and (func_dec(8) or func_dec(9) or func_dec(10) or func_dec(11) or func_dec(13))) or op_dec(2) or op_dec(4) or op_dec(5) or op_dec(6) or op_dec(7) or op_dec(20) or op_dec(43));
+    reg_we <= not ((op_dec(0) and (func_dec(8) or func_dec(10) or func_dec(11) or func_dec(13))) or op_dec(2) or op_dec(4) or op_dec(5) or op_dec(6) or op_dec(7) or op_dec(20) or op_dec(43));
     reg_sel_1 <= (op_dec(0) and (func_dec(9) or func_dec(10) or func_dec(11))) or op_dec(3);
     reg_sel_0 <= (op_dec(0) and (func_dec(10) or func_dec(11))) or op_dec(35);
     rd_sel <= op_dec(8) or op_dec(9) or op_dec(10) or op_dec(11) or op_dec(12) or op_dec(13) or op_dec(14) or op_dec(15) or op_dec(35);
