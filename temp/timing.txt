@@ -1,0 +1,75 @@
+
+#
+# CprE 381 toolflow Timing dump
+#
+
+FMax: 44.66mhz Clk Constraint: 20.00ns Slack: -2.39ns # 54.45 MHz without IMEM, slack = 1.635 ns
+
+The path is given below
+
+ ===================================================================
+ From Node    : mem:IMem|altsyncram:ram_rtl_0|altsyncram_eg81:auto_generated|ram_block1a6~porta_we_reg
+ To Node      : PC:progc|RegNBit:progc|dffg:\NDFF:22:DFFI|s_Q
+ Launch Clock : iCLK
+ Latch Clock  : iCLK
+ Data Arrival Path:
+ Total (ns)  Incr (ns)     Type  Element
+ ==========  ========= ==  ====  ===================================
+      0.000      0.000           launch edge time
+      3.462      3.462  R        clock network delay
+      3.725      0.263     uTco  mem:IMem|altsyncram:ram_rtl_0|altsyncram_eg81:auto_generated|ram_block1a6~porta_we_reg
+      6.574      2.849 FR  CELL  IMem|ram_rtl_0|auto_generated|ram_block1a6|portadataout[5]
+      7.331      0.757 RR    IC  IMem|ram~56|datad
+      7.486      0.155 RR  CELL  IMem|ram~56|combout
+      8.837      1.351 RR    IC  reg|muxrt|Mux22~5|dataa
+      9.265      0.428 RF  CELL  reg|muxrt|Mux22~5|combout
+      9.984      0.719 FF    IC  reg|muxrt|Mux22~6|datad
+     10.134      0.150 FR  CELL  reg|muxrt|Mux22~6|combout
+     10.338      0.204 RR    IC  reg|muxrt|Mux22~7|datad
+     10.493      0.155 RR  CELL  reg|muxrt|Mux22~7|combout
+     12.645      2.152 RR    IC  reg|muxrt|Mux22~8|datad
+     12.800      0.155 RR  CELL  reg|muxrt|Mux22~8|combout
+     13.005      0.205 RR    IC  reg|muxrt|Mux22~24|datac
+     13.292      0.287 RR  CELL  reg|muxrt|Mux22~24|combout
+     14.940      1.648 RR    IC  Comp|CLA2|P~0|dataa
+     15.369      0.429 RF  CELL  Comp|CLA2|P~0|combout
+     16.245      0.876 FF    IC  Comp|CLA2|P~3|datab
+     16.595      0.350 FF  CELL  Comp|CLA2|P~3|combout
+     17.356      0.761 FF    IC  Comp|c24~0|dataa
+     17.780      0.424 FF  CELL  Comp|c24~0|combout
+     19.528      1.748 FF    IC  Comp|CLA3|Carry[2]~8|datac
+     19.808      0.280 FF  CELL  Comp|CLA3|Carry[2]~8|combout
+     20.035      0.227 FF    IC  Comp|CLA3|S[2]|datad
+     20.185      0.150 FR  CELL  Comp|CLA3|S[2]|combout
+     20.953      0.768 RR    IC  Comp|zero~18|datab
+     21.314      0.361 RF  CELL  Comp|zero~18|combout
+     21.541      0.227 FF    IC  Comp|zero~19|datad
+     21.666      0.125 FF  CELL  Comp|zero~19|combout
+     21.898      0.232 FF    IC  Comp|zero~20|datac
+     22.178      0.280 FF  CELL  Comp|zero~20|combout
+     22.423      0.245 FF    IC  Comp|zero~21|datac
+     22.703      0.280 FF  CELL  Comp|zero~21|combout
+     22.930      0.227 FF    IC  pc_1~3|datad
+     23.080      0.150 FR  CELL  pc_1~3|combout
+     23.331      0.251 RR    IC  pc_0|datab
+     23.695      0.364 RF  CELL  pc_0|combout
+     24.512      0.817 FF    IC  progc|Mux9~0|datac
+     24.792      0.280 FF  CELL  progc|Mux9~0|combout
+     25.038      0.246 FF    IC  progc|Selector0~1|datac
+     25.318      0.280 FF  CELL  progc|Selector0~1|combout
+     25.546      0.228 FF    IC  progc|Selector0~2|datad
+     25.696      0.150 FR  CELL  progc|Selector0~2|combout
+     25.696      0.000 RR    IC  progc|progc|\NDFF:22:DFFI|s_Q|d
+     25.783      0.087 RR  CELL  PC:progc|RegNBit:progc|dffg:\NDFF:22:DFFI|s_Q
+ Data Required Path:
+ Total (ns)  Incr (ns)     Type  Element
+ ==========  ========= ==  ====  ===================================
+     20.000     20.000           latch edge time
+     23.388      3.388  R        clock network delay
+     23.396      0.008           clock pessimism removed
+     23.376     -0.020           clock uncertainty
+     23.394      0.018     uTsu  PC:progc|RegNBit:progc|dffg:\NDFF:22:DFFI|s_Q
+ Data Arrival Time  :    25.783
+ Data Required Time :    23.394
+ Slack              :    -2.389 (VIOLATED)
+ ===================================================================
