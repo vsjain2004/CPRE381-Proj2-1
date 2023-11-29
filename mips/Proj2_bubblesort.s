@@ -17,12 +17,12 @@ nop
 # Load N-1 into $t1
 lw $t1, -4($t0) # Load N into $t1
 
-# Set variables i ($t2) to -1, j*4 ($t3) to -4
+# Set variables i ($t2) to -1
 addi $t2, $0, -1
-addi $t3, $0, -4
-nop
 
-addi $t1, $t1, -1 # N - 1
+nop
+nop
+addi $t1, $t1, -1
 
 outer:
 # Check for outer loop
@@ -40,6 +40,13 @@ nop
 
 add $t4, $0, $0 # Set swapRequired ($t4) to 0 (false)
 sub $t5, $t1, $t2 # Set $t5 to N-i-1
+nop
+nop
+nop
+sll $t5, $t5, 2 # Multiply $t5 by 4
+addi $t3, $0, -4 # Set j*4 ($t3) to -4
+nop
+nop
 
 inner:
 # Check for inner loop
