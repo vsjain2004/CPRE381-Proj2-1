@@ -27,13 +27,14 @@ jal link1
 nop
 nop
 nop
-jr $31
+j ad
 nop
 link1:
 nop
 nop
 nop
-jalr $31
+jr $31
+ad:
 nop
 
 andi $t0, $t2, 4
